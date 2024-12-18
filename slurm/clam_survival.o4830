@@ -1,0 +1,18 @@
+
+Load Dataset
+This is a survival prediction task.
+Event time stats:
+count    2027.000000
+mean      474.619142
+std       511.481073
+min         0.000000
+25%       178.000000
+50%       335.000000
+75%       588.000000
+max      3881.000000
+Name: event_time, dtype: float64
+Censorship stats:
+censorship
+1    1617
+0     410
+Name: count, dtype: int64

@@ -1,0 +1,633 @@
+
+Load Dataset
+This is a survival prediction task.
+Event time stats:
+count    2027.000000
+mean      474.619142
+std       511.481073
+min         0.000000
+25%       178.000000
+50%       335.000000
+75%       588.000000
+max      3881.000000
+Name: event_time, dtype: float64
+Censorship stats:
+censorship
+1    1617
+0     410
+Name: count, dtype: int64
+split_dir:  /home/brentoh1030/workspace/CLAM/splits/task_3_survival_prediction_100
+################# Settings ###################
+num_splits:  10
+k_start:  -1
+k_end:  -1
+task:  task_3_survival_prediction
+task_type:  regression
+max_epochs:  200
+results_dir:  /home/brentoh1030/workspace/CLAM/results
+lr:  0.0002
+experiment:  task_3_survival_prediction_CLAM_50
+reg:  1e-05
+label_frac:  1.0
+bag_loss:  ce
+seed:  1
+model_type:  clam_sb
+model_size:  small
+use_drop_out:  0.25
+weighted_sample:  False
+opt:  adam
+bag_weight:  0.7
+inst_loss:  None
+B:  8
+split_dir:  /home/brentoh1030/workspace/CLAM/splits/task_3_survival_prediction_100
+Generated splits: Train size: 1623, Val size: 202, Test size: 202
+
+Training Fold 0!
+
+Init train/val/test splits... 
+Done!
+Training on 1623 samples
+Validating on 202 samples
+Testing on 202 samples
+
+Init loss function... Done!
+
+Init Model... Done!
+CLAM_SB(
+  (attention_net): Sequential(
+    (0): Linear(in_features=1324, out_features=512, bias=True)
+    (1): ReLU()
+    (2): Dropout(p=0.25, inplace=False)
+    (3): Attn_Net_Gated(
+      (attention_a): Sequential(
+        (0): Linear(in_features=512, out_features=256, bias=True)
+        (1): Tanh()
+        (2): Dropout(p=0.25, inplace=False)
+      )
+      (attention_b): Sequential(
+        (0): Linear(in_features=512, out_features=256, bias=True)
+        (1): Sigmoid()
+        (2): Dropout(p=0.25, inplace=False)
+      )
+      (attention_c): Linear(in_features=256, out_features=1, bias=True)
+    )
+  )
+  (instance_classifiers): ModuleList()
+  (instance_loss_fn): CrossEntropyLoss()
+  (risk_layer): Linear(in_features=512, out_features=1, bias=True)
+)
+Total number of parameters: 941826
+Total number of trainable parameters: 941826
+
+Init optimizer ... Done!
+
+Init Loaders... Done!
+
+Setup EarlyStopping... Done!
+
+
+Batch 16/1623, Avg Loss: 0.1278
+Batch 32/1623, Avg Loss: 0.1276
+Batch 48/1623, Avg Loss: 0.1273
+Batch 64/1623, Avg Loss: 0.1244
+Batch 80/1623, Avg Loss: 0.1249
+Batch 96/1623, Avg Loss: 0.1241
+Batch 112/1623, Avg Loss: 0.1237
+Batch 128/1623, Avg Loss: 0.1236
+Batch 144/1623, Avg Loss: 0.1239
+Batch 160/1623, Avg Loss: 0.1233
+Batch 176/1623, Avg Loss: 0.1222
+Batch 192/1623, Avg Loss: 0.1222
+Batch 208/1623, Avg Loss: 0.1234
+Batch 224/1623, Avg Loss: 0.1237
+Batch 240/1623, Avg Loss: 0.1230
+Batch 256/1623, Avg Loss: 0.1230
+Batch 272/1623, Avg Loss: 0.1217
+Batch 288/1623, Avg Loss: 0.1217
+Batch 304/1623, Avg Loss: 0.1215
+Batch 320/1623, Avg Loss: 0.1225
+Batch 336/1623, Avg Loss: 0.1224
+Batch 352/1623, Avg Loss: 0.1230
+Batch 368/1623, Avg Loss: 0.1224
+Batch 384/1623, Avg Loss: 0.1226
+Batch 400/1623, Avg Loss: 0.1222
+Batch 416/1623, Avg Loss: 0.1217
+Batch 432/1623, Avg Loss: 0.1214
+Batch 448/1623, Avg Loss: 0.1211
+Batch 464/1623, Avg Loss: 0.1208
+Batch 480/1623, Avg Loss: 0.1210
+Batch 496/1623, Avg Loss: 0.1214
+Batch 512/1623, Avg Loss: 0.1216
+Batch 528/1623, Avg Loss: 0.1214
+Batch 544/1623, Avg Loss: 0.1209
+Batch 560/1623, Avg Loss: 0.1206
+Batch 576/1623, Avg Loss: 0.1203
+Batch 592/1623, Avg Loss: 0.1200
+Batch 608/1623, Avg Loss: 0.1201
+Batch 624/1623, Avg Loss: 0.1199
+Batch 640/1623, Avg Loss: 0.1196
+Batch 656/1623, Avg Loss: 0.1194
+Batch 672/1623, Avg Loss: 0.1192
+Batch 688/1623, Avg Loss: 0.1195
+Batch 704/1623, Avg Loss: 0.1195
+Batch 720/1623, Avg Loss: 0.1192
+Batch 736/1623, Avg Loss: 0.1191
+Batch 752/1623, Avg Loss: 0.1190
+Batch 768/1623, Avg Loss: 0.1189
+Batch 784/1623, Avg Loss: 0.1188
+Batch 800/1623, Avg Loss: 0.1189
+Batch 816/1623, Avg Loss: 0.1194
+Batch 832/1623, Avg Loss: 0.1190
+Batch 848/1623, Avg Loss: 0.1189
+Batch 864/1623, Avg Loss: 0.1191
+Batch 880/1623, Avg Loss: 0.1190
+Batch 896/1623, Avg Loss: 0.1189
+Batch 912/1623, Avg Loss: 0.1190
+Batch 928/1623, Avg Loss: 0.1190
+Batch 944/1623, Avg Loss: 0.1191
+Batch 960/1623, Avg Loss: 0.1190
+Batch 976/1623, Avg Loss: 0.1189
+Batch 992/1623, Avg Loss: 0.1188
+Batch 1008/1623, Avg Loss: 0.1187
+Batch 1024/1623, Avg Loss: 0.1189
+Batch 1040/1623, Avg Loss: 0.1189
+Batch 1056/1623, Avg Loss: 0.1186
+Batch 1072/1623, Avg Loss: 0.1186
+Batch 1088/1623, Avg Loss: 0.1185
+Batch 1104/1623, Avg Loss: 0.1185
+Batch 1120/1623, Avg Loss: 0.1183
+Batch 1136/1623, Avg Loss: 0.1182
+Batch 1152/1623, Avg Loss: 0.1182
+Batch 1168/1623, Avg Loss: 0.1182
+Batch 1184/1623, Avg Loss: 0.1183
+Batch 1200/1623, Avg Loss: 0.1182
+Batch 1216/1623, Avg Loss: 0.1181
+Batch 1232/1623, Avg Loss: 0.1180
+Batch 1248/1623, Avg Loss: 0.1181
+Batch 1264/1623, Avg Loss: 0.1181
+Batch 1280/1623, Avg Loss: 0.1181
+Batch 1296/1623, Avg Loss: 0.1181
+Batch 1312/1623, Avg Loss: 0.1184
+Batch 1328/1623, Avg Loss: 0.1184
+Batch 1344/1623, Avg Loss: 0.1182
+Batch 1360/1623, Avg Loss: 0.1181
+Batch 1376/1623, Avg Loss: 0.1182
+Batch 1392/1623, Avg Loss: 0.1181
+Batch 1408/1623, Avg Loss: 0.1180
+Batch 1424/1623, Avg Loss: 0.1180
+Batch 1440/1623, Avg Loss: 0.1178
+Batch 1456/1623, Avg Loss: 0.1179
+Batch 1472/1623, Avg Loss: 0.1179
+Batch 1488/1623, Avg Loss: 0.1179
+Batch 1504/1623, Avg Loss: 0.1179
+Batch 1520/1623, Avg Loss: 0.1178
+Batch 1536/1623, Avg Loss: 0.1179
+Batch 1552/1623, Avg Loss: 0.1177
+Batch 1568/1623, Avg Loss: 0.1176
+Batch 1584/1623, Avg Loss: 0.1177
+Batch 1600/1623, Avg Loss: 0.1178
+Batch 1616/1623, Avg Loss: 0.1178
+Batch 1623/1623, Avg Loss: 0.1180
+
+Epoch 0: Train Loss: 0.1180
+
+Val Set, val_loss: 4.3102, C-index: 0.4774
+Validation loss decreased (inf --> 4.310239).  Saving model ...
+
+
+Batch 16/1623, Avg Loss: 0.1076
+Batch 32/1623, Avg Loss: 0.1135
+Batch 48/1623, Avg Loss: 0.1172
+Batch 64/1623, Avg Loss: 0.1163
+Batch 80/1623, Avg Loss: 0.1161
+Batch 96/1623, Avg Loss: 0.1159
+Batch 112/1623, Avg Loss: 0.1147
+Batch 128/1623, Avg Loss: 0.1165
+Batch 144/1623, Avg Loss: 0.1170
+Batch 160/1623, Avg Loss: 0.1164
+Batch 176/1623, Avg Loss: 0.1153
+Batch 192/1623, Avg Loss: 0.1151
+Batch 208/1623, Avg Loss: 0.1145
+Batch 224/1623, Avg Loss: 0.1155
+Batch 240/1623, Avg Loss: 0.1149
+Batch 256/1623, Avg Loss: 0.1149
+Batch 272/1623, Avg Loss: 0.1157
+Batch 288/1623, Avg Loss: 0.1156
+Batch 304/1623, Avg Loss: 0.1153
+Batch 320/1623, Avg Loss: 0.1153
+Batch 336/1623, Avg Loss: 0.1156
+Batch 352/1623, Avg Loss: 0.1154
+Batch 368/1623, Avg Loss: 0.1155
+Batch 384/1623, Avg Loss: 0.1153
+Batch 400/1623, Avg Loss: 0.1153
+Batch 416/1623, Avg Loss: 0.1151
+Batch 432/1623, Avg Loss: 0.1152
+Batch 448/1623, Avg Loss: 0.1151
+Batch 464/1623, Avg Loss: 0.1149
+Batch 480/1623, Avg Loss: 0.1149
+Batch 496/1623, Avg Loss: 0.1151
+Batch 512/1623, Avg Loss: 0.1152
+Batch 528/1623, Avg Loss: 0.1154
+Batch 544/1623, Avg Loss: 0.1156
+Batch 560/1623, Avg Loss: 0.1157
+Batch 576/1623, Avg Loss: 0.1157
+Batch 592/1623, Avg Loss: 0.1155
+Batch 608/1623, Avg Loss: 0.1152
+Batch 624/1623, Avg Loss: 0.1153
+Batch 640/1623, Avg Loss: 0.1155
+Batch 656/1623, Avg Loss: 0.1159
+Batch 672/1623, Avg Loss: 0.1161
+Batch 688/1623, Avg Loss: 0.1160
+Batch 704/1623, Avg Loss: 0.1160
+Batch 720/1623, Avg Loss: 0.1159
+Batch 736/1623, Avg Loss: 0.1160
+Batch 752/1623, Avg Loss: 0.1160
+Batch 768/1623, Avg Loss: 0.1158
+Batch 784/1623, Avg Loss: 0.1157
+Batch 800/1623, Avg Loss: 0.1156
+Batch 816/1623, Avg Loss: 0.1159
+Batch 832/1623, Avg Loss: 0.1160
+Batch 848/1623, Avg Loss: 0.1160
+Batch 864/1623, Avg Loss: 0.1159
+Batch 880/1623, Avg Loss: 0.1157
+Batch 896/1623, Avg Loss: 0.1156
+Batch 912/1623, Avg Loss: 0.1156
+Batch 928/1623, Avg Loss: 0.1155
+Batch 944/1623, Avg Loss: 0.1155
+Batch 960/1623, Avg Loss: 0.1157
+Batch 976/1623, Avg Loss: 0.1157
+Batch 992/1623, Avg Loss: 0.1157
+Batch 1008/1623, Avg Loss: 0.1159
+Batch 1024/1623, Avg Loss: 0.1159
+Batch 1040/1623, Avg Loss: 0.1160
+Batch 1056/1623, Avg Loss: 0.1160
+Batch 1072/1623, Avg Loss: 0.1161
+Batch 1088/1623, Avg Loss: 0.1158
+Batch 1104/1623, Avg Loss: 0.1160
+Batch 1120/1623, Avg Loss: 0.1158
+Batch 1136/1623, Avg Loss: 0.1158
+Batch 1152/1623, Avg Loss: 0.1159
+Batch 1168/1623, Avg Loss: 0.1161
+Batch 1184/1623, Avg Loss: 0.1161
+Batch 1200/1623, Avg Loss: 0.1162
+Batch 1216/1623, Avg Loss: 0.1161
+Batch 1232/1623, Avg Loss: 0.1162
+Batch 1248/1623, Avg Loss: 0.1163
+Batch 1264/1623, Avg Loss: 0.1161
+Batch 1280/1623, Avg Loss: 0.1162
+Batch 1296/1623, Avg Loss: 0.1162
+Batch 1312/1623, Avg Loss: 0.1161
+Batch 1328/1623, Avg Loss: 0.1162
+Batch 1344/1623, Avg Loss: 0.1162
+Batch 1360/1623, Avg Loss: 0.1161
+Batch 1376/1623, Avg Loss: 0.1160
+Batch 1392/1623, Avg Loss: 0.1159
+Batch 1408/1623, Avg Loss: 0.1160
+Batch 1424/1623, Avg Loss: 0.1159
+Batch 1440/1623, Avg Loss: 0.1160
+Batch 1456/1623, Avg Loss: 0.1160
+Batch 1472/1623, Avg Loss: 0.1161
+Batch 1488/1623, Avg Loss: 0.1160
+Batch 1504/1623, Avg Loss: 0.1158
+Batch 1520/1623, Avg Loss: 0.1158
+Batch 1536/1623, Avg Loss: 0.1158
+Batch 1552/1623, Avg Loss: 0.1157
+Batch 1568/1623, Avg Loss: 0.1157
+Batch 1584/1623, Avg Loss: 0.1157
+Batch 1600/1623, Avg Loss: 0.1156
+Batch 1616/1623, Avg Loss: 0.1157
+Batch 1623/1623, Avg Loss: 0.1159
+
+Epoch 1: Train Loss: 0.1159
+
+Val Set, val_loss: 4.2769, C-index: 0.4599
+Validation loss decreased (4.310239 --> 4.276914).  Saving model ...
+
+
+Batch 16/1623, Avg Loss: 0.1107
+Batch 32/1623, Avg Loss: 0.1133
+Batch 48/1623, Avg Loss: 0.1130
+Batch 64/1623, Avg Loss: 0.1144
+Batch 80/1623, Avg Loss: 0.1126
+Batch 96/1623, Avg Loss: 0.1128
+Batch 112/1623, Avg Loss: 0.1144
+Batch 128/1623, Avg Loss: 0.1133
+Batch 144/1623, Avg Loss: 0.1131
+Batch 160/1623, Avg Loss: 0.1126
+Batch 176/1623, Avg Loss: 0.1130
+Batch 192/1623, Avg Loss: 0.1127
+Batch 208/1623, Avg Loss: 0.1122
+Batch 224/1623, Avg Loss: 0.1115
+Batch 240/1623, Avg Loss: 0.1116
+Batch 256/1623, Avg Loss: 0.1126
+Batch 272/1623, Avg Loss: 0.1131
+Batch 288/1623, Avg Loss: 0.1129
+Batch 304/1623, Avg Loss: 0.1124
+Batch 320/1623, Avg Loss: 0.1117
+Batch 336/1623, Avg Loss: 0.1124
+Batch 352/1623, Avg Loss: 0.1121
+Batch 368/1623, Avg Loss: 0.1115
+Batch 384/1623, Avg Loss: 0.1119
+Batch 400/1623, Avg Loss: 0.1120
+Batch 416/1623, Avg Loss: 0.1123
+Batch 432/1623, Avg Loss: 0.1123
+Batch 448/1623, Avg Loss: 0.1122
+Batch 464/1623, Avg Loss: 0.1121
+Batch 480/1623, Avg Loss: 0.1119
+Batch 496/1623, Avg Loss: 0.1118
+Batch 512/1623, Avg Loss: 0.1120
+Batch 528/1623, Avg Loss: 0.1118
+Batch 544/1623, Avg Loss: 0.1119
+Batch 560/1623, Avg Loss: 0.1120
+Batch 576/1623, Avg Loss: 0.1122
+Batch 592/1623, Avg Loss: 0.1122
+Batch 608/1623, Avg Loss: 0.1123
+Batch 624/1623, Avg Loss: 0.1123
+Batch 640/1623, Avg Loss: 0.1122
+Batch 656/1623, Avg Loss: 0.1121
+Batch 672/1623, Avg Loss: 0.1125
+Batch 688/1623, Avg Loss: 0.1129
+Batch 704/1623, Avg Loss: 0.1127
+Batch 720/1623, Avg Loss: 0.1125
+Batch 736/1623, Avg Loss: 0.1125
+Batch 752/1623, Avg Loss: 0.1124
+Batch 768/1623, Avg Loss: 0.1125
+Batch 784/1623, Avg Loss: 0.1124
+Batch 800/1623, Avg Loss: 0.1127
+Batch 816/1623, Avg Loss: 0.1127
+Batch 832/1623, Avg Loss: 0.1127
+Batch 848/1623, Avg Loss: 0.1128
+Batch 864/1623, Avg Loss: 0.1127
+Batch 880/1623, Avg Loss: 0.1128
+Batch 896/1623, Avg Loss: 0.1127
+Batch 912/1623, Avg Loss: 0.1125
+Batch 928/1623, Avg Loss: 0.1126
+Batch 944/1623, Avg Loss: 0.1128
+Batch 960/1623, Avg Loss: 0.1129
+Batch 976/1623, Avg Loss: 0.1132
+Batch 992/1623, Avg Loss: 0.1131
+Batch 1008/1623, Avg Loss: 0.1130
+Batch 1024/1623, Avg Loss: 0.1130
+Batch 1040/1623, Avg Loss: 0.1130
+Batch 1056/1623, Avg Loss: 0.1132
+Batch 1072/1623, Avg Loss: 0.1131
+Batch 1088/1623, Avg Loss: 0.1133
+Batch 1104/1623, Avg Loss: 0.1134
+Batch 1120/1623, Avg Loss: 0.1135
+Batch 1136/1623, Avg Loss: 0.1135
+Batch 1152/1623, Avg Loss: 0.1133
+Batch 1168/1623, Avg Loss: 0.1133
+Batch 1184/1623, Avg Loss: 0.1133
+Batch 1200/1623, Avg Loss: 0.1135
+Batch 1216/1623, Avg Loss: 0.1135
+Batch 1232/1623, Avg Loss: 0.1135
+Batch 1248/1623, Avg Loss: 0.1136
+Batch 1264/1623, Avg Loss: 0.1138
+Batch 1280/1623, Avg Loss: 0.1139
+Batch 1296/1623, Avg Loss: 0.1140
+Batch 1312/1623, Avg Loss: 0.1138
+Batch 1328/1623, Avg Loss: 0.1138
+Batch 1344/1623, Avg Loss: 0.1139
+Batch 1360/1623, Avg Loss: 0.1140
+Batch 1376/1623, Avg Loss: 0.1140
+Batch 1392/1623, Avg Loss: 0.1139
+Batch 1408/1623, Avg Loss: 0.1139
+Batch 1424/1623, Avg Loss: 0.1139
+Batch 1440/1623, Avg Loss: 0.1139
+Batch 1456/1623, Avg Loss: 0.1140
+Batch 1472/1623, Avg Loss: 0.1139
+Batch 1488/1623, Avg Loss: 0.1139
+Batch 1504/1623, Avg Loss: 0.1139
+Batch 1520/1623, Avg Loss: 0.1139
+Batch 1536/1623, Avg Loss: 0.1139
+Batch 1552/1623, Avg Loss: 0.1138
+Batch 1568/1623, Avg Loss: 0.1138
+Batch 1584/1623, Avg Loss: 0.1138
+Batch 1600/1623, Avg Loss: 0.1138
+Batch 1616/1623, Avg Loss: 0.1140
+Batch 1623/1623, Avg Loss: 0.1141
+
+Epoch 2: Train Loss: 0.1141
+
+Val Set, val_loss: 4.3618, C-index: 0.4840
+EarlyStopping counter: 1 out of 20
+
+
+Batch 16/1623, Avg Loss: 0.1159
+Batch 32/1623, Avg Loss: 0.1191
+Batch 48/1623, Avg Loss: 0.1139
+Batch 64/1623, Avg Loss: 0.1070
+Batch 80/1623, Avg Loss: 0.1085
+Batch 96/1623, Avg Loss: 0.1077
+Batch 112/1623, Avg Loss: 0.1054
+Batch 128/1623, Avg Loss: 0.1060
+Batch 144/1623, Avg Loss: 0.1066
+Batch 160/1623, Avg Loss: 0.1082
+Batch 176/1623, Avg Loss: 0.1084
+Batch 192/1623, Avg Loss: 0.1082
+Batch 208/1623, Avg Loss: 0.1084
+Batch 224/1623, Avg Loss: 0.1083
+Batch 240/1623, Avg Loss: 0.1084
+Batch 256/1623, Avg Loss: 0.1087
+Batch 272/1623, Avg Loss: 0.1088
+Batch 288/1623, Avg Loss: 0.1084
+Batch 304/1623, Avg Loss: 0.1081
+Batch 320/1623, Avg Loss: 0.1079
+Batch 336/1623, Avg Loss: 0.1085
+Batch 352/1623, Avg Loss: 0.1090
+Batch 368/1623, Avg Loss: 0.1085
+Batch 384/1623, Avg Loss: 0.1089
+Batch 400/1623, Avg Loss: 0.1093
+Batch 416/1623, Avg Loss: 0.1096
+Batch 432/1623, Avg Loss: 0.1094
+Batch 448/1623, Avg Loss: 0.1090
+Batch 464/1623, Avg Loss: 0.1089
+Batch 480/1623, Avg Loss: 0.1082
+Batch 496/1623, Avg Loss: 0.1081
+Batch 512/1623, Avg Loss: 0.1083
+Batch 528/1623, Avg Loss: 0.1086
+Batch 544/1623, Avg Loss: 0.1094
+Batch 560/1623, Avg Loss: 0.1090
+Batch 576/1623, Avg Loss: 0.1088
+Batch 592/1623, Avg Loss: 0.1095
+Batch 608/1623, Avg Loss: 0.1093
+Batch 624/1623, Avg Loss: 0.1095
+Batch 640/1623, Avg Loss: 0.1095
+Batch 656/1623, Avg Loss: 0.1095
+Batch 672/1623, Avg Loss: 0.1094
+Batch 688/1623, Avg Loss: 0.1094
+Batch 704/1623, Avg Loss: 0.1095
+Batch 720/1623, Avg Loss: 0.1098
+Batch 736/1623, Avg Loss: 0.1097
+Batch 752/1623, Avg Loss: 0.1099
+Batch 768/1623, Avg Loss: 0.1105
+Batch 784/1623, Avg Loss: 0.1107
+Batch 800/1623, Avg Loss: 0.1109
+Batch 816/1623, Avg Loss: 0.1112
+Batch 832/1623, Avg Loss: 0.1111
+Batch 848/1623, Avg Loss: 0.1111
+Batch 864/1623, Avg Loss: 0.1113
+Batch 880/1623, Avg Loss: 0.1115
+Batch 896/1623, Avg Loss: 0.1114
+Batch 912/1623, Avg Loss: 0.1113
+Batch 928/1623, Avg Loss: 0.1110
+Batch 944/1623, Avg Loss: 0.1111
+Batch 960/1623, Avg Loss: 0.1109
+Batch 976/1623, Avg Loss: 0.1111
+Batch 992/1623, Avg Loss: 0.1107
+Batch 1008/1623, Avg Loss: 0.1109
+Batch 1024/1623, Avg Loss: 0.1110
+Batch 1040/1623, Avg Loss: 0.1111
+Batch 1056/1623, Avg Loss: 0.1110
+Batch 1072/1623, Avg Loss: 0.1111
+Batch 1088/1623, Avg Loss: 0.1109
+Batch 1104/1623, Avg Loss: 0.1108
+Batch 1120/1623, Avg Loss: 0.1107
+Batch 1136/1623, Avg Loss: 0.1107
+Batch 1152/1623, Avg Loss: 0.1106
+Batch 1168/1623, Avg Loss: 0.1106
+Batch 1184/1623, Avg Loss: 0.1106
+Batch 1200/1623, Avg Loss: 0.1103
+Batch 1216/1623, Avg Loss: 0.1102
+Batch 1232/1623, Avg Loss: 0.1101
+Batch 1248/1623, Avg Loss: 0.1100
+Batch 1264/1623, Avg Loss: 0.1101
+Batch 1280/1623, Avg Loss: 0.1105
+Batch 1296/1623, Avg Loss: 0.1106
+Batch 1312/1623, Avg Loss: 0.1106
+Batch 1328/1623, Avg Loss: 0.1105
+Batch 1344/1623, Avg Loss: 0.1105
+Batch 1360/1623, Avg Loss: 0.1106
+Batch 1376/1623, Avg Loss: 0.1106
+Batch 1392/1623, Avg Loss: 0.1106
+Batch 1408/1623, Avg Loss: 0.1108
+Batch 1424/1623, Avg Loss: 0.1108
+Batch 1440/1623, Avg Loss: 0.1108
+Batch 1456/1623, Avg Loss: 0.1110
+Batch 1472/1623, Avg Loss: 0.1109
+Batch 1488/1623, Avg Loss: 0.1109
+Batch 1504/1623, Avg Loss: 0.1109
+Batch 1520/1623, Avg Loss: 0.1107
+Batch 1536/1623, Avg Loss: 0.1108
+Batch 1552/1623, Avg Loss: 0.1108
+Batch 1568/1623, Avg Loss: 0.1109
+Batch 1584/1623, Avg Loss: 0.1110
+Batch 1600/1623, Avg Loss: 0.1109
+Batch 1616/1623, Avg Loss: 0.1109
+Batch 1623/1623, Avg Loss: 0.1112
+
+Epoch 3: Train Loss: 0.1112
+
+Val Set, val_loss: 4.4150, C-index: 0.4868
+EarlyStopping counter: 2 out of 20
+
+
+Batch 16/1623, Avg Loss: 0.1142
+Batch 32/1623, Avg Loss: 0.1126
+Batch 48/1623, Avg Loss: 0.1165
+Batch 64/1623, Avg Loss: 0.1103
+Batch 80/1623, Avg Loss: 0.1125
+Batch 96/1623, Avg Loss: 0.1109
+Batch 112/1623, Avg Loss: 0.1091
+Batch 128/1623, Avg Loss: 0.1095
+Batch 144/1623, Avg Loss: 0.1094
+Batch 160/1623, Avg Loss: 0.1096
+Batch 176/1623, Avg Loss: 0.1099
+Batch 192/1623, Avg Loss: 0.1093
+Batch 208/1623, Avg Loss: 0.1092
+Batch 224/1623, Avg Loss: 0.1086
+Batch 240/1623, Avg Loss: 0.1090
+Batch 256/1623, Avg Loss: 0.1087
+Batch 272/1623, Avg Loss: 0.1089
+Batch 288/1623, Avg Loss: 0.1095
+Batch 304/1623, Avg Loss: 0.1092
+Batch 320/1623, Avg Loss: 0.1086
+Batch 336/1623, Avg Loss: 0.1089
+Batch 352/1623, Avg Loss: 0.1086
+Batch 368/1623, Avg Loss: 0.1086
+Batch 384/1623, Avg Loss: 0.1082
+Batch 400/1623, Avg Loss: 0.1085
+Batch 416/1623, Avg Loss: 0.1082
+Batch 432/1623, Avg Loss: 0.1085
+Batch 448/1623, Avg Loss: 0.1086
+Batch 464/1623, Avg Loss: 0.1086
+Batch 480/1623, Avg Loss: 0.1086
+Batch 496/1623, Avg Loss: 0.1091
+Batch 512/1623, Avg Loss: 0.1090
+Batch 528/1623, Avg Loss: 0.1087
+Batch 544/1623, Avg Loss: 0.1092
+Batch 560/1623, Avg Loss: 0.1086
+Batch 576/1623, Avg Loss: 0.1090
+Batch 592/1623, Avg Loss: 0.1093
+Batch 608/1623, Avg Loss: 0.1092
+Batch 624/1623, Avg Loss: 0.1094
+Batch 640/1623, Avg Loss: 0.1093
+Batch 656/1623, Avg Loss: 0.1095
+Batch 672/1623, Avg Loss: 0.1093
+Batch 688/1623, Avg Loss: 0.1096
+Batch 704/1623, Avg Loss: 0.1097
+Batch 720/1623, Avg Loss: 0.1095
+Batch 736/1623, Avg Loss: 0.1097
+Batch 752/1623, Avg Loss: 0.1095
+Batch 768/1623, Avg Loss: 0.1095
+Batch 784/1623, Avg Loss: 0.1095
+Batch 800/1623, Avg Loss: 0.1096
+Batch 816/1623, Avg Loss: 0.1095
+Batch 832/1623, Avg Loss: 0.1098
+Batch 848/1623, Avg Loss: 0.1097
+Batch 864/1623, Avg Loss: 0.1097
+Batch 880/1623, Avg Loss: 0.1095
+Batch 896/1623, Avg Loss: 0.1094
+Batch 912/1623, Avg Loss: 0.1093
+Batch 928/1623, Avg Loss: 0.1093
+Batch 944/1623, Avg Loss: 0.1093
+Batch 960/1623, Avg Loss: 0.1093
+Batch 976/1623, Avg Loss: 0.1095
+Batch 992/1623, Avg Loss: 0.1095
+Batch 1008/1623, Avg Loss: 0.1097
+Batch 1024/1623, Avg Loss: 0.1096
+Batch 1040/1623, Avg Loss: 0.1096
+Batch 1056/1623, Avg Loss: 0.1094
+Batch 1072/1623, Avg Loss: 0.1094
+Batch 1088/1623, Avg Loss: 0.1093
+Batch 1104/1623, Avg Loss: 0.1093
+Batch 1120/1623, Avg Loss: 0.1092
+Batch 1136/1623, Avg Loss: 0.1093
+Batch 1152/1623, Avg Loss: 0.1094
+Batch 1168/1623, Avg Loss: 0.1094
+Batch 1184/1623, Avg Loss: 0.1093
+Batch 1200/1623, Avg Loss: 0.1093
+Batch 1216/1623, Avg Loss: 0.1093
+Batch 1232/1623, Avg Loss: 0.1095
+Batch 1248/1623, Avg Loss: 0.1096
+Batch 1264/1623, Avg Loss: 0.1095
+Batch 1280/1623, Avg Loss: 0.1096
+Batch 1296/1623, Avg Loss: 0.1099
+Batch 1312/1623, Avg Loss: 0.1100
+Batch 1328/1623, Avg Loss: 0.1100
+Batch 1344/1623, Avg Loss: 0.1097
+Batch 1360/1623, Avg Loss: 0.1097
+Batch 1376/1623, Avg Loss: 0.1096
+Batch 1392/1623, Avg Loss: 0.1094
+Batch 1408/1623, Avg Loss: 0.1093
+Batch 1424/1623, Avg Loss: 0.1093
+Batch 1440/1623, Avg Loss: 0.1095
+Batch 1456/1623, Avg Loss: 0.1095
+Batch 1472/1623, Avg Loss: 0.1093
+Batch 1488/1623, Avg Loss: 0.1093
+Batch 1504/1623, Avg Loss: 0.1094
+Batch 1520/1623, Avg Loss: 0.1094
+Batch 1536/1623, Avg Loss: 0.1095
+Batch 1552/1623, Avg Loss: 0.1094
+Batch 1568/1623, Avg Loss: 0.1094
+Batch 1584/1623, Avg Loss: 0.1095
+Batch 1600/1623, Avg Loss: 0.1096
+Batch 1616/1623, Avg Loss: 0.1097
+Batch 1623/1623, Avg Loss: 0.1099
+
+Epoch 4: Train Loss: 0.1099
+
+Val Set, val_loss: 4.4155, C-index: 0.4654
+EarlyStopping counter: 3 out of 20
+
+

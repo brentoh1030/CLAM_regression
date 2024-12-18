@@ -34,8 +34,10 @@ class SubsetSequentialSampler(Sampler):
 
 def collate_MIL(batch):
 	img = torch.cat([item[0] for item in batch], dim = 0)
-	label = torch.LongTensor([item[1] for item in batch])
-	return [img, label]
+	#label = torch.LongTensor([item[1] for item in batch])
+	event_time = torch.tensor([item[1] for item in batch])
+	censorship = torch.tensor([item[2] for item in batch])
+	return [img, event_time, censorship]
 
 def collate_features(batch):
 	img = torch.cat([item[0] for item in batch], dim = 0)
@@ -132,6 +134,27 @@ def generate_split(cls_ids, val_num, test_num, samples, n_splits = 5,
 
 		yield sampled_train_ids, all_val_ids, all_test_ids
 
+def generate_split_no_cls(samples, val_num, test_num, n_splits=5, seed=7, label_frac=1.0, custom_test_ids=None):
+    indices = np.arange(samples).astype(int)
+
+    if custom_test_ids is not None:
+        indices = np.setdiff1d(indices, custom_test_ids)
+
+    np.random.seed(seed)
+    for i in range(n_splits):
+        np.random.shuffle(indices)
+
+        val_ids = indices[:val_num]
+        test_ids = indices[val_num:val_num + test_num]
+        remaining_ids = indices[val_num + test_num:]
+
+        if label_frac == 1:
+            train_ids = remaining_ids
+        else:
+            sample_num = math.ceil(len(remaining_ids) * label_frac)
+            train_ids = remaining_ids[:sample_num]
+
+        yield train_ids, val_ids, test_ids
 
 def nth(iterator, n, default=None):
 	if n is None:

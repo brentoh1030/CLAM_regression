@@ -8,8 +8,30 @@ from models.model_clam import CLAM_MB, CLAM_SB
 from sklearn.preprocessing import label_binarize
 from sklearn.metrics import roc_auc_score, roc_curve
 from sklearn.metrics import auc as calc_auc
+from lifelines.utils import concordance_index
 
 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def cox_partial_likelihood_loss(risk_scores, times, events):
+    idx = torch.argsort(times, descending=True)
+    sorted_events = events[idx]
+    sorted_risk = risk_scores[idx].view(-1)
+
+    max_risk = torch.max(sorted_risk)
+    exp_risk = torch.exp(sorted_risk - max_risk)
+    cum_sum = torch.cumsum(exp_risk, dim=0)
+    log_cum_sum = torch.log(cum_sum) + max_risk
+    
+    event_mask = (sorted_events == 1)
+    loss = -(torch.mean(sorted_risk[event_mask] - log_cum_sum[event_mask]))
+    #print("Sorted Risk Scores:", sorted_risk)
+    #print("Exp(Risk):", exp_risk)
+    #print("Cumulative Sum of Exp(Risk):", cum_sum)
+    #print("Log Cumulative Sum:", log_cum_sum)
+    #print("Event Mask:", event_mask)
+    #print("Loss Contributions:", sorted_risk[event_mask] - log_cum_sum[event_mask])
+
+    return loss
 
 class Accuracy_Logger(object):
     """Accuracy logger"""
@@ -63,7 +85,7 @@ class EarlyStopping:
         self.counter = 0
         self.best_score = None
         self.early_stop = False
-        self.val_loss_min = np.Inf
+        self.val_loss_min = np.inf
 
     def __call__(self, epoch, val_loss, model, ckpt_name = 'checkpoint.pt'):
 
@@ -114,19 +136,23 @@ def train(datasets, cur, args):
     print("Testing on {} samples".format(len(test_split)))
 
     print('\nInit loss function...', end=' ')
-    if args.bag_loss == 'svm':
-        from topk.svm import SmoothTop1SVM
-        loss_fn = SmoothTop1SVM(n_classes = args.n_classes)
-        if device.type == 'cuda':
-            loss_fn = loss_fn.cuda()
+    if args.task_type == 'classification':
+        if args.bag_loss == 'svm':
+            from topk.svm import SmoothTop1SVM
+            loss_fn = SmoothTop1SVM(n_classes = args.n_classes)
+            if device.type == 'cuda':
+                loss_fn = loss_fn.cuda()
+        else:
+            loss_fn = nn.CrossEntropyLoss()
     else:
-        loss_fn = nn.CrossEntropyLoss()
+        loss_fn = cox_partial_likelihood_loss
     print('Done!')
     
     print('\nInit Model...', end=' ')
     model_dict = {"dropout": args.drop_out, 
                   'n_classes': args.n_classes, 
-                  "embed_dim": args.embed_dim}
+                  "embed_dim": args.embed_dim,
+                  "task_type": args.task_type}
     
     if args.model_size is not None and args.model_type != 'mil':
         model_dict.update({"size_arg": args.model_size})
@@ -200,32 +226,52 @@ def train(datasets, cur, args):
     else:
         torch.save(model.state_dict(), os.path.join(args.results_dir, "s_{}_checkpoint.pt".format(cur)))
 
-    _, val_error, val_auc, _= summary(model, val_loader, args.n_classes)
-    print('Val error: {:.4f}, ROC AUC: {:.4f}'.format(val_error, val_auc))
 
-    results_dict, test_error, test_auc, acc_logger = summary(model, test_loader, args.n_classes)
-    print('Test error: {:.4f}, ROC AUC: {:.4f}'.format(test_error, test_auc))
+    if args.task_type == 'classification':
+        _, val_error, val_auc, _= summary(model, val_loader, args.n_classes)
+        print('Val error: {:.4f}, ROC AUC: {:.4f}'.format(val_error, val_auc))
 
-    for i in range(args.n_classes):
-        acc, correct, count = acc_logger.get_summary(i)
-        print('class {}: acc {}, correct {}/{}'.format(i, acc, correct, count))
+        results_dict, test_error, test_auc, acc_logger = summary(model, test_loader, args.n_classes)
+        print('Test error: {:.4f}, ROC AUC: {:.4f}'.format(test_error, test_auc))
+
+        for i in range(args.n_classes):
+            acc, correct, count = acc_logger.get_summary(i)
+            print('class {}: acc {}, correct {}/{}'.format(i, acc, correct, count))
+
+            if writer:
+                writer.add_scalar('final/test_class_{}_acc'.format(i), acc, 0)
 
         if writer:
-            writer.add_scalar('final/test_class_{}_acc'.format(i), acc, 0)
+            writer.add_scalar('final/val_error', val_error, 0)
+            writer.add_scalar('final/val_auc', val_auc, 0)
+            writer.add_scalar('final/test_error', test_error, 0)
+            writer.add_scalar('final/test_auc', test_auc, 0)
+            writer.close()
+        return results_dict, test_auc, val_auc, 1-test_error, 1-val_error
 
-    if writer:
-        writer.add_scalar('final/val_error', val_error, 0)
-        writer.add_scalar('final/val_auc', val_auc, 0)
-        writer.add_scalar('final/test_error', test_error, 0)
-        writer.add_scalar('final/test_auc', test_auc, 0)
-        writer.close()
-    return results_dict, test_auc, val_auc, 1-test_error, 1-val_error 
-
+    else:
+        _, val_c_index = summary(model, val_loader)
+        _, test_c_index = summary(model, test_loader)
+        print('Validation C-index: {:.4f}'.format(val_c_index))
+        print('Test C-index: {:.4f}'.format(test_c_index))
+        if writer:
+            writer.add_scalar('final/val_c_index', val_c_index, 0)
+            writer.add_scalar('final/test_c_index', test_c_index, 0)
+            writer.close()
+        return test_c_index, val_c_index
 
 def train_loop_clam(epoch, model, loader, optimizer, n_classes, bag_weight, writer = None, loss_fn = None):
     model.train()
-    acc_logger = Accuracy_Logger(n_classes=n_classes)
-    inst_logger = Accuracy_Logger(n_classes=n_classes)
+    accumulation_steps=16
+    optimizer.zero_grad()
+    # Initialize loggers for classification or placeholders for regression
+    if model.task_type == 'classification':
+        acc_logger = Accuracy_Logger(n_classes=n_classes)
+        inst_logger = Accuracy_Logger(n_classes=n_classes)
+    
+    accumulated_risk_scores = []
+    accumulated_event_times = []
+    accumulated_censorship = []
     
     train_loss = 0.
     train_error = 0.
@@ -233,61 +279,112 @@ def train_loop_clam(epoch, model, loader, optimizer, n_classes, bag_weight, writ
     inst_count = 0
 
     print('\n')
-    for batch_idx, (data, label) in enumerate(loader):
-        data, label = data.to(device), label.to(device)
-        logits, Y_prob, Y_hat, _, instance_dict = model(data, label=label, instance_eval=True)
+    for batch_idx, batch_data in enumerate(loader):
+        #print(f"Batch {batch_idx}: img shape = {batch_data[0].shape}, event_time shape = {batch_data[1].shape}, censorship shape = {batch_data[2].shape}")
+        if model.task_type == 'classification':
+            data, label = batch_data
+            label = label.to(device)
+        elif model.task_type == 'regression':
+            data, event_time, censorship = batch_data
+            if not torch.isfinite(batch_data[0]).all():
+                print("NaN or Inf found in input features")
+            if not torch.isfinite(batch_data[1]).all():
+                print("NaN or Inf found in event_time")
+            if not torch.isfinite(batch_data[2]).all():
+                print("NaN or Inf found in censorship")
+            event_time, censorship = event_time.to(device), censorship.to(device)
 
-        acc_logger.log(Y_hat, label)
-        loss = loss_fn(logits, label)
-        loss_value = loss.item()
+        data = data.to(device)
 
-        instance_loss = instance_dict['instance_loss']
-        inst_count+=1
-        instance_loss_value = instance_loss.item()
-        train_inst_loss += instance_loss_value
+        # Model forward pass
+        if model.task_type == 'classification':
+            logits, Y_prob, Y_hat, _, instance_dict = model(data, label=label, instance_eval=True)
+        else:  # Regression
+            risk_scores, _, instance_dict = model(data, label=None, instance_eval=True)
+            accumulated_risk_scores.append(risk_scores)
+            accumulated_event_times.append(event_time)
+            accumulated_censorship.append(censorship)
+            #print("Risk scores before loss:", risk_scores)
         
-        total_loss = bag_weight * loss + (1-bag_weight) * instance_loss 
+        if (batch_idx + 1) % accumulation_steps == 0 or (batch_idx + 1) == len(loader):
+            
+            # Concatenate accumulated data
+            risk_scores_batch = torch.cat(accumulated_risk_scores, dim=0)
+            event_times_batch = torch.cat(accumulated_event_times, dim=0)
+            censorship_batch = torch.cat(accumulated_censorship, dim=0)
 
-        inst_preds = instance_dict['inst_preds']
-        inst_labels = instance_dict['inst_labels']
-        inst_logger.log_batch(inst_preds, inst_labels)
+            # Compute Cox loss
+            loss = loss_fn(risk_scores_batch, event_times_batch, censorship_batch) / accumulation_steps
+            # Backward pass
+            loss.backward()
 
-        train_loss += loss_value
-        if (batch_idx + 1) % 20 == 0:
-            print('batch {}, loss: {:.4f}, instance_loss: {:.4f}, weighted_loss: {:.4f}, '.format(batch_idx, loss_value, instance_loss_value, total_loss.item()) + 
-                'label: {}, bag_size: {}'.format(label.item(), data.size(0)))
+            # Update weights
+            optimizer.step()
+            optimizer.zero_grad()  # Reset gradients
 
-        error = calculate_error(Y_hat, label)
-        train_error += error
-        
-        # backward pass
-        total_loss.backward()
-        # step
-        optimizer.step()
-        optimizer.zero_grad()
+            # Clear accumulated data
+            accumulated_risk_scores = []
+            accumulated_event_times = []
+            accumulated_censorship = []
+            train_loss += loss.item() * accumulation_steps  # Undo scaling for logging
+            print(f"Batch {batch_idx + 1}/{len(loader)}, Avg Loss: {train_loss / (batch_idx + 1):.4f}")
+
+        # Compute losses
+        #if model.task_type == 'classification':
+        #    loss = loss_fn(logits, label)
+        #    loss_value = loss.item()
+        #    acc_logger.log(Y_hat, label)
+
+            # Classification error calculation
+         #   error = calculate_error(Y_hat, label)
+         #   train_error += error
+
+        #else:  # Regression
+        #    loss = loss_fn(risk_scores, event_time, censorship) / accumulation_steps
+            #loss_value = loss.item()
+
+        # Instance-level loss (common for both tasks if instance loss is enabled)
+        #if instance_dict:
+        #    instance_loss = instance_dict['instance_loss']
+        #    inst_count += 1
+        #    instance_loss_value = instance_loss.item()
+        #    train_inst_loss += instance_loss_value
+        #    total_loss = bag_weight * loss + (1 - bag_weight) * instance_loss
+
+        #    if model.task_type == 'classification':
+        #        inst_preds = instance_dict['inst_preds']
+        #        inst_labels = instance_dict['inst_labels']
+        #        inst_logger.log_batch(inst_preds, inst_labels)
+        #else:
+        #    total_loss = loss
+
+        #train_loss += loss_value
 
     # calculate loss and error for epoch
     train_loss /= len(loader)
-    train_error /= len(loader)
-    
     if inst_count > 0:
         train_inst_loss /= inst_count
-        print('\n')
-        for i in range(2):
-            acc, correct, count = inst_logger.get_summary(i)
-            print('class {} clustering acc {}: correct {}/{}'.format(i, acc, correct, count))
 
-    print('Epoch: {}, train_loss: {:.4f}, train_clustering_loss:  {:.4f}, train_error: {:.4f}'.format(epoch, train_loss, train_inst_loss,  train_error))
-    for i in range(n_classes):
-        acc, correct, count = acc_logger.get_summary(i)
-        print('class {}: acc {}, correct {}/{}'.format(i, acc, correct, count))
-        if writer and acc is not None:
-            writer.add_scalar('train/class_{}_acc'.format(i), acc, epoch)
+    print(f"\nEpoch {epoch}: Train Loss: {train_loss:.4f}")
+    if model.task_type == 'classification':
+        train_error /= len(loader)
+        print('train_error: {:.4f}'.format(train_error))
 
+        # Log classification accuracy per class
+        for i in range(n_classes):
+            acc, correct, count = acc_logger.get_summary(i)
+            print('class {}: acc {}, correct {}/{}'.format(i, acc, correct, count))
+            if writer and acc is not None:
+                writer.add_scalar('train/class_{}_acc'.format(i), acc, epoch)
+
+    # Log metrics to TensorBoard
     if writer:
         writer.add_scalar('train/loss', train_loss, epoch)
-        writer.add_scalar('train/error', train_error, epoch)
-        writer.add_scalar('train/clustering_loss', train_inst_loss, epoch)
+        if inst_count > 0:
+            writer.add_scalar('train/clustering_loss', train_inst_loss, epoch)
+
+        if model.task_type == 'classification':
+            writer.add_scalar('train/error', train_error, epoch)
 
 def train_loop(epoch, model, loader, optimizer, n_classes, writer = None, loss_fn = None):   
     model.train()
@@ -394,83 +491,124 @@ def validate(cur, epoch, model, loader, n_classes, early_stopping = None, writer
 
 def validate_clam(cur, epoch, model, loader, n_classes, early_stopping = None, writer = None, loss_fn = None, results_dir = None):
     model.eval()
-    acc_logger = Accuracy_Logger(n_classes=n_classes)
-    inst_logger = Accuracy_Logger(n_classes=n_classes)
+    if model.task_type == 'classification':
+        acc_logger = Accuracy_Logger(n_classes=n_classes)
+        inst_logger = Accuracy_Logger(n_classes=n_classes)
     val_loss = 0.
     val_error = 0.
 
     val_inst_loss = 0.
     val_inst_acc = 0.
     inst_count=0
-    
-    prob = np.zeros((len(loader), n_classes))
-    labels = np.zeros(len(loader))
-    sample_size = model.k_sample
-    with torch.inference_mode():
-        for batch_idx, (data, label) in enumerate(loader):
-            data, label = data.to(device), label.to(device)      
-            logits, Y_prob, Y_hat, _, instance_dict = model(data, label=label, instance_eval=True)
-            acc_logger.log(Y_hat, label)
-            
-            loss = loss_fn(logits, label)
+    accumulation_steps = 16
 
-            val_loss += loss.item()
-
-            instance_loss = instance_dict['instance_loss']
-            
-            inst_count+=1
-            instance_loss_value = instance_loss.item()
-            val_inst_loss += instance_loss_value
-
-            inst_preds = instance_dict['inst_preds']
-            inst_labels = instance_dict['inst_labels']
-            inst_logger.log_batch(inst_preds, inst_labels)
-
-            prob[batch_idx] = Y_prob.cpu().numpy()
-            labels[batch_idx] = label.item()
-            
-            error = calculate_error(Y_hat, label)
-            val_error += error
-
-    val_error /= len(loader)
-    val_loss /= len(loader)
-
-    if n_classes == 2:
-        auc = roc_auc_score(labels, prob[:, 1])
-        aucs = []
+    if model.task_type == 'classification':
+        prob = np.zeros((len(loader), n_classes))
+        labels = np.zeros(len(loader))
     else:
-        aucs = []
-        binary_labels = label_binarize(labels, classes=[i for i in range(n_classes)])
-        for class_idx in range(n_classes):
-            if class_idx in labels:
-                fpr, tpr, _ = roc_curve(binary_labels[:, class_idx], prob[:, class_idx])
-                aucs.append(calc_auc(fpr, tpr))
+        accumulated_risk_scores = []
+        accumulated_event_times = []
+        accumulated_censorships = []
+
+    sample_size = model.k_sample
+
+    with torch.inference_mode():
+        for batch_idx, batch_data in enumerate(loader):
+            if model.task_type == 'classification':
+                data, label = batch_data
+                label = label.to(device)
+            elif model.task_type == 'regression':
+                data, event_time, censorship = batch_data
+                event_time, censorship = event_time.to(device), censorship.to(device)
+
+            data = data.to(device)
+
+            if model.task_type == 'classification':
+                logits, Y_prob, Y_hat, _, instance_dict = model(data, label=label, instance_eval=True)
+                acc_logger.log(Y_hat, label)
+                loss = loss_fn(logits, label)
+
+                inst_preds = instance_dict['inst_preds']
+                inst_labels = instance_dict['inst_labels']
+                inst_logger.log_batch(inst_preds, inst_labels)
+
+                prob[batch_idx] = Y_prob.cpu().numpy()
+                labels[batch_idx] = label.item()
+
+                error = calculate_error(Y_hat, label)
+                val_error += error
+            else:  # Regression
+                risk_score, _, instance_dict = model(data, label=None, instance_eval=True)
+                # Accumulate for the entire dataset
+                accumulated_risk_scores.append(risk_score.cpu())
+                accumulated_event_times.append(event_time.cpu())
+                accumulated_censorships.append(censorship.cpu())
+
+            if instance_dict:
+                instance_loss = instance_dict['instance_loss']
+                inst_count += 1
+                val_inst_loss += instance_loss.item()
+
+    # Concatenate all accumulated data
+    accumulated_risk_scores = torch.cat(accumulated_risk_scores, dim=0).to(device)
+    accumulated_event_times = torch.cat(accumulated_event_times, dim=0).to(device)
+    accumulated_censorships = torch.cat(accumulated_censorships, dim=0).to(device)
+    # Compute loss for the whole dataset
+    val_loss = loss_fn(accumulated_risk_scores, accumulated_event_times, accumulated_censorships).item()
+ 
+    #val_loss /= len(loader) / accumulation_steps
+
+    if model.task_type == 'classification':
+            val_error /= len(loader)
+            if n_classes == 2:
+                auc = roc_auc_score(labels, prob[:, 1])
             else:
-                aucs.append(float('nan'))
+                aucs = []
+                binary_labels = label_binarize(labels, classes=[i for i in range(n_classes)])
+                for class_idx in range(n_classes):
+                    if class_idx in labels:
+                        fpr, tpr, _ = roc_curve(binary_labels[:, class_idx], prob[:, class_idx])
+                        aucs.append(calc_auc(fpr, tpr))
+                    else:
+                        aucs.append(float('nan'))
+                auc = np.nanmean(np.array(aucs))
 
-        auc = np.nanmean(np.array(aucs))
+            print('\nVal Set, val_loss: {:.4f}, val_error: {:.4f}, auc: {:.4f}'.format(val_loss, val_error, auc))
 
-    print('\nVal Set, val_loss: {:.4f}, val_error: {:.4f}, auc: {:.4f}'.format(val_loss, val_error, auc))
-    if inst_count > 0:
-        val_inst_loss /= inst_count
-        for i in range(2):
-            acc, correct, count = inst_logger.get_summary(i)
-            print('class {} clustering acc {}: correct {}/{}'.format(i, acc, correct, count))
-    
-    if writer:
-        writer.add_scalar('val/loss', val_loss, epoch)
-        writer.add_scalar('val/auc', auc, epoch)
-        writer.add_scalar('val/error', val_error, epoch)
-        writer.add_scalar('val/inst_loss', val_inst_loss, epoch)
+            if inst_count > 0:
+                val_inst_loss /= inst_count
+                for i in range(2):
+                    acc, correct, count = inst_logger.get_summary(i)
+                    print('class {} clustering acc {}: correct {}/{}'.format(i, acc, correct, count))
 
+            for i in range(n_classes):
+                acc, correct, count = acc_logger.get_summary(i)
+                print('class {}: acc {}, correct {}/{}'.format(i, acc, correct, count))
+                if writer and acc is not None:
+                    writer.add_scalar('val/class_{}_acc'.format(i), acc, epoch)
 
-    for i in range(n_classes):
-        acc, correct, count = acc_logger.get_summary(i)
-        print('class {}: acc {}, correct {}/{}'.format(i, acc, correct, count))
-        
-        if writer and acc is not None:
-            writer.add_scalar('val/class_{}_acc'.format(i), acc, epoch)
-     
+            if writer:
+                writer.add_scalar('val/loss', val_loss, epoch)
+                writer.add_scalar('val/auc', auc, epoch)
+                writer.add_scalar('val/error', val_error, epoch)
+                writer.add_scalar('val/inst_loss', val_inst_loss, epoch)
+
+    else:  # Regression
+        # Compute Concordance Index for regression tasks
+        c_index = concordance_index(
+            event_times=accumulated_event_times.cpu().numpy(),  # Move to CPU before converting to NumPy
+            predicted_scores=accumulated_risk_scores.cpu().numpy(),  # Move to CPU before converting to NumPy
+            event_observed=accumulated_censorships.cpu().numpy()  # Move to CPU before converting to NumPy
+            #event_times=event_times.cpu().numpy(),  # Move to CPU before converting to NumPy
+            #predicted_scores=risk_scores.cpu().numpy(),  # Move to CPU before converting to NumPy
+            #event_observed=censorships.cpu().numpy()  # Move to CPU before converting to NumPy
+        )
+
+        print('\nVal Set, val_loss: {:.4f}, C-index: {:.4f}'.format(val_loss, c_index))
+
+        if writer:
+            writer.add_scalar('val/loss', val_loss, epoch)
+            writer.add_scalar('val/c_index', c_index, epoch)
 
     if early_stopping:
         assert results_dir
@@ -482,49 +620,88 @@ def validate_clam(cur, epoch, model, loader, n_classes, early_stopping = None, w
 
     return False
 
-def summary(model, loader, n_classes):
-    acc_logger = Accuracy_Logger(n_classes=n_classes)
+def summary(model, loader, n_classes=None):
     model.eval()
-    test_loss = 0.
-    test_error = 0.
 
-    all_probs = np.zeros((len(loader), n_classes))
-    all_labels = np.zeros(len(loader))
+    if model.task_type == 'classification':
+        acc_logger = Accuracy_Logger(n_classes=n_classes)
+        test_loss = 0.
+        test_error = 0.
 
-    slide_ids = loader.dataset.slide_data['slide_id']
-    patient_results = {}
+        all_probs = np.zeros((len(loader), n_classes))
+        all_labels = np.zeros(len(loader))
 
-    for batch_idx, (data, label) in enumerate(loader):
-        data, label = data.to(device), label.to(device)
-        slide_id = slide_ids.iloc[batch_idx]
-        with torch.inference_mode():
-            logits, Y_prob, Y_hat, _, _ = model(data)
+        slide_ids = loader.dataset.slide_data['slide_id']
+        patient_results = {}
 
-        acc_logger.log(Y_hat, label)
-        probs = Y_prob.cpu().numpy()
-        all_probs[batch_idx] = probs
-        all_labels[batch_idx] = label.item()
-        
-        patient_results.update({slide_id: {'slide_id': np.array(slide_id), 'prob': probs, 'label': label.item()}})
-        error = calculate_error(Y_hat, label)
-        test_error += error
+        for batch_idx, (data, label) in enumerate(loader):
+            data, label = data.to(device), label.to(device)
+            slide_id = slide_ids.iloc[batch_idx]
+            with torch.inference_mode():
+                logits, Y_prob, Y_hat, _, _ = model(data)
 
-    test_error /= len(loader)
+            acc_logger.log(Y_hat, label)
+            probs = Y_prob.cpu().numpy()
+            all_probs[batch_idx] = probs
+            all_labels[batch_idx] = label.item()
+            
+            patient_results.update({slide_id: {'slide_id': np.array(slide_id), 'prob': probs, 'label': label.item()}})
+            error = calculate_error(Y_hat, label)
+            test_error += error
 
-    if n_classes == 2:
-        auc = roc_auc_score(all_labels, all_probs[:, 1])
-        aucs = []
+        test_error /= len(loader)
+
+        if n_classes == 2:
+            auc = roc_auc_score(all_labels, all_probs[:, 1])
+            aucs = []
+        else:
+            aucs = []
+            binary_labels = label_binarize(all_labels, classes=[i for i in range(n_classes)])
+            for class_idx in range(n_classes):
+                if class_idx in all_labels:
+                    fpr, tpr, _ = roc_curve(binary_labels[:, class_idx], all_probs[:, class_idx])
+                    aucs.append(calc_auc(fpr, tpr))
+                else:
+                    aucs.append(float('nan'))
+
+            auc = np.nanmean(np.array(aucs))
+
+
+        return patient_results, test_error, auc, acc_logger
+    
     else:
-        aucs = []
-        binary_labels = label_binarize(all_labels, classes=[i for i in range(n_classes)])
-        for class_idx in range(n_classes):
-            if class_idx in all_labels:
-                fpr, tpr, _ = roc_curve(binary_labels[:, class_idx], all_probs[:, class_idx])
-                aucs.append(calc_auc(fpr, tpr))
-            else:
-                aucs.append(float('nan'))
+        all_risk_scores = []
+        all_event_times = []
+        all_censorships = []
+        slide_ids = loader.dataset.slide_data['slide_id']
+        patient_results = {}
 
-        auc = np.nanmean(np.array(aucs))
+        for batch_idx, (data, event_time, censorship) in enumerate(loader):
+            data = data.to(device)
+            event_time = event_time.to(device)  # Observed survival times
+            censorship = censorship.to(device)  # Censorship flags (1 if event occurred, 0 if censored)
+            slide_id = slide_ids.iloc[batch_idx]
 
+            with torch.inference_mode():
+                risk_scores, _, _ = model(data)  # Predict risk scores
 
-    return patient_results, test_error, auc, acc_logger
+            all_risk_scores.extend(risk_scores.cpu().numpy())
+            all_event_times.extend(event_time.cpu().numpy())
+            all_censorships.extend(censorship.cpu().numpy())
+            
+            patient_results.update({slide_id: {
+                'slide_id': np.array(slide_id), 
+                'risk_score': risk_scores.cpu().numpy(),
+                'event_time': event_time.cpu().numpy(),
+                'censorship': censorship.cpu().numpy()
+            }})
+
+        # Compute Concordance Index using lifelines
+        c_index = concordance_index(
+            event_times=np.array(all_event_times),
+            predicted_scores=np.array(all_risk_scores),
+            event_observed=np.array(all_censorships)
+        )
+
+        return patient_results, c_index
+

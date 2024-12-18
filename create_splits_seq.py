@@ -12,7 +12,7 @@ parser.add_argument('--seed', type=int, default=1,
                     help='random seed (default: 1)')
 parser.add_argument('--k', type=int, default=10,
                     help='number of splits (default: 10)')
-parser.add_argument('--task', type=str, choices=['task_1_tumor_vs_normal', 'task_2_tumor_subtyping'])
+parser.add_argument('--task', type=str, choices=['task_1_tumor_vs_normal', 'task_2_tumor_subtyping', 'task_3_survival_prediction'])
 parser.add_argument('--val_frac', type=float, default= 0.1,
                     help='fraction of labels for validation (default: 0.1)')
 parser.add_argument('--test_frac', type=float, default= 0.1,
@@ -41,12 +41,28 @@ elif args.task == 'task_2_tumor_subtyping':
                             patient_voting='maj',
                             ignore=[])
 
+elif args.task == 'task_3_survival_prediction':
+    # Add relevant columns for survival prediction
+    args.n_classes = 1  # No explicit classes for survival prediction
+    dataset = Generic_WSI_Classification_Dataset(csv_path='dataset_csv/survival_prediction_dummy_clean.csv',
+                            shuffle=False,
+                            seed=args.seed,
+                            print_info=True,
+                            label_dict=None,  # No categorical labels
+                            patient_strat=False,  # Stratify based on patients
+                            ignore=[])
+    dataset.event_time_col = 'event_time'  # Column for event times
+    dataset.censorship_col = 'censorship'  # Column for censorship flags
+
 else:
     raise NotImplementedError
 
-num_slides_cls = np.array([len(cls_ids) for cls_ids in dataset.patient_cls_ids])
-val_num = np.round(num_slides_cls * args.val_frac).astype(int)
-test_num = np.round(num_slides_cls * args.test_frac).astype(int)
+#num_slides_cls = np.array([len(cls_ids) for cls_ids in dataset.patient_cls_ids])
+#val_num = np.round(num_slides_cls * args.val_frac).astype(int)
+#test_num = np.round(num_slides_cls * args.test_frac).astype(int)
+
+val_num = int(len(dataset.slide_data) * args.val_frac)
+test_num = int(len(dataset.slide_data) * args.test_frac)
 
 if __name__ == '__main__':
     if args.label_frac > 0:

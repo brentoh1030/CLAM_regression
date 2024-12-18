@@ -39,6 +39,8 @@ def main(args):
     all_val_auc = []
     all_test_acc = []
     all_val_acc = []
+    all_test_c_index = []
+    all_val_c_index = []
     folds = np.arange(start, end)
     for i in folds:
         seed_torch(args.seed)
@@ -46,18 +48,33 @@ def main(args):
                 csv_path='{}/splits_{}.csv'.format(args.split_dir, i))
         
         datasets = (train_dataset, val_dataset, test_dataset)
-        results, test_auc, val_auc, test_acc, val_acc  = train(datasets, i, args)
-        all_test_auc.append(test_auc)
-        all_val_auc.append(val_auc)
-        all_test_acc.append(test_acc)
-        all_val_acc.append(val_acc)
+
+        if args.task_type == 'classification':
+            results, test_auc, val_auc, test_acc, val_acc  = train(datasets, i, args)
+            all_test_auc.append(test_auc)
+            all_val_auc.append(val_auc)
+            all_test_acc.append(test_acc)
+            all_val_acc.append(val_acc)
+
+        else:  # Regression
+            results, test_c_index, val_c_index = train(datasets, i, args)
+            all_test_c_index.append(test_c_index)
+            all_val_c_index.append(val_c_index)
+
         #write results to pkl
         filename = os.path.join(args.results_dir, 'split_{}_results.pkl'.format(i))
         save_pkl(filename, results)
 
-    final_df = pd.DataFrame({'folds': folds, 'test_auc': all_test_auc, 
-        'val_auc': all_val_auc, 'test_acc': all_test_acc, 'val_acc' : all_val_acc})
-
+    if args.task_type == 'classification':
+        final_df = pd.DataFrame({'folds': folds, 'test_auc': all_test_auc, 
+            'val_auc': all_val_auc, 'test_acc': all_test_acc, 'val_acc' : all_val_acc})
+    else:  # Regression
+        final_df = pd.DataFrame({
+            'folds': folds, 
+            'test_c_index': all_test_c_index,
+            'val_c_index': all_val_c_index
+        })
+        
     if len(folds) != args.k:
         save_name = 'summary_partial_{}_{}.csv'.format(start, end)
     else:
@@ -98,7 +115,9 @@ parser.add_argument('--model_type', type=str, choices=['clam_sb', 'clam_mb', 'mi
 parser.add_argument('--exp_code', type=str, help='experiment code for saving results')
 parser.add_argument('--weighted_sample', action='store_true', default=False, help='enable weighted sampling')
 parser.add_argument('--model_size', type=str, choices=['small', 'big'], default='small', help='size of model, does not affect mil')
-parser.add_argument('--task', type=str, choices=['task_1_tumor_vs_normal',  'task_2_tumor_subtyping'])
+parser.add_argument('--task', type=str, choices=['task_1_tumor_vs_normal',  'task_2_tumor_subtyping', 'task_3_survival_prediction'])
+parser.add_argument('--task_type', type=str, choices=['classification', 'regression'], default='classification', 
+                    help='specify task type (default: classification)')
 ### CLAM specific options
 parser.add_argument('--no_inst_cluster', action='store_true', default=False,
                      help='disable instance-level clustering')
@@ -131,6 +150,7 @@ settings = {'num_splits': args.k,
             'k_start': args.k_start,
             'k_end': args.k_end,
             'task': args.task,
+            'task_type': args.task_type,
             'max_epochs': args.max_epochs, 
             'results_dir': args.results_dir, 
             'lr': args.lr,
@@ -173,6 +193,20 @@ elif args.task == 'task_2_tumor_subtyping':
                             label_dict = {'subtype_1':0, 'subtype_2':1, 'subtype_3':2},
                             patient_strat= False,
                             ignore=[])
+    
+elif args.task == 'task_3_survival_prediction':
+    args.n_classes=2
+    dataset = Generic_MIL_Dataset(csv_path = 'dataset_csv/survival_prediction_dummy_clean.csv',
+                            data_dir= os.path.join(args.data_root_dir, 'survival_prediction_resnet_features'),
+                            shuffle = False, 
+                            seed = args.seed, 
+                            print_info = True,
+                            label_dict = None,
+                            label_col = None,
+                            patient_strat= False,
+                            event_time_col = 'event_time',
+                            censorship_col = 'censorship',
+                            ignore=[])    
 
     if args.model_type in ['clam_sb', 'clam_mb']:
         assert args.subtyping 

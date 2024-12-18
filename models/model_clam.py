@@ -14,7 +14,7 @@ args:
 """
 class Attn_Net(nn.Module):
 
-    def __init__(self, L = 1024, D = 256, dropout = False, n_classes = 1):
+    def __init__(self, L = 1324, D = 256, dropout = False, n_classes = 1):
         super(Attn_Net, self).__init__()
         self.module = [
             nn.Linear(L, D),
@@ -39,7 +39,7 @@ args:
     n_classes: number of classes 
 """
 class Attn_Net_Gated(nn.Module):
-    def __init__(self, L = 1024, D = 256, dropout = False, n_classes = 1):
+    def __init__(self, L = 1324, D = 256, dropout = False, n_classes = 1):
         super(Attn_Net_Gated, self).__init__()
         self.attention_a = [
             nn.Linear(L, D),
@@ -76,7 +76,7 @@ args:
 """
 class CLAM_SB(nn.Module):
     def __init__(self, gate = True, size_arg = "small", dropout = 0., k_sample=8, n_classes=2,
-        instance_loss_fn=nn.CrossEntropyLoss(), subtyping=False, embed_dim=1024):
+        instance_loss_fn=nn.CrossEntropyLoss(), subtyping=False, embed_dim=1324, task_type='classification'):
         super().__init__()
         self.size_dict = {"small": [embed_dim, 512, 256], "big": [embed_dim, 512, 384]}
         size = self.size_dict[size_arg]
@@ -87,14 +87,24 @@ class CLAM_SB(nn.Module):
             attention_net = Attn_Net(L = size[1], D = size[2], dropout = dropout, n_classes = 1)
         fc.append(attention_net)
         self.attention_net = nn.Sequential(*fc)
-        self.classifiers = nn.Linear(size[1], n_classes)
         instance_classifiers = [nn.Linear(size[1], 2) for i in range(n_classes)]
         self.instance_classifiers = nn.ModuleList(instance_classifiers)
         self.k_sample = k_sample
         self.instance_loss_fn = instance_loss_fn
         self.n_classes = n_classes
         self.subtyping = subtyping
-    
+        self.task_type = task_type
+
+        if self.task_type == 'classification':
+            # Original classification layer
+            self.classifiers = nn.Linear(size[1], n_classes)
+            instance_classifiers = [nn.Linear(size[1], 2) for _ in range(n_classes)]
+            self.instance_classifiers = nn.ModuleList(instance_classifiers)
+        else:
+            # For regression: output a single scalar (risk score)
+            self.risk_layer = nn.Linear(size[1], 1)
+            self.instance_classifiers = nn.ModuleList()
+
     @staticmethod
     def create_positive_targets(length, device):
         return torch.full((length, ), 1, device=device).long()
@@ -143,7 +153,7 @@ class CLAM_SB(nn.Module):
         A_raw = A
         A = F.softmax(A, dim=1)  # softmax over N
 
-        if instance_eval:
+        if self.task_type == 'classification' and instance_eval:
             total_inst_loss = 0.0
             all_preds = []
             all_targets = []
@@ -168,17 +178,25 @@ class CLAM_SB(nn.Module):
                 total_inst_loss /= len(self.instance_classifiers)
                 
         M = torch.mm(A, h) 
-        logits = self.classifiers(M)
-        Y_hat = torch.topk(logits, 1, dim = 1)[1]
-        Y_prob = F.softmax(logits, dim = 1)
-        if instance_eval:
-            results_dict = {'instance_loss': total_inst_loss, 'inst_labels': np.array(all_targets), 
-            'inst_preds': np.array(all_preds)}
+
+        if self.task_type == 'classification':
+            logits = self.classifiers(M)
+            Y_hat = torch.topk(logits, 1, dim = 1)[1]
+            Y_prob = F.softmax(logits, dim = 1)
+            if instance_eval:
+                results_dict = {'instance_loss': total_inst_loss, 'inst_labels': np.array(all_targets), 
+                'inst_preds': np.array(all_preds)}
+            else:
+                results_dict = {}
+            if return_features:
+                results_dict.update({'features': M})
+            return logits, Y_prob, Y_hat, A_raw, results_dict
         else:
+            logits = self.risk_layer(M)
             results_dict = {}
-        if return_features:
-            results_dict.update({'features': M})
-        return logits, Y_prob, Y_hat, A_raw, results_dict
+            if return_features:
+                results_dict.update({'features': M})
+            return logits, A_raw, results_dict
 
 class CLAM_MB(CLAM_SB):
     def __init__(self, gate = True, size_arg = "small", dropout = 0., k_sample=8, n_classes=2,
@@ -204,7 +222,7 @@ class CLAM_MB(CLAM_SB):
 
     def forward(self, h, label=None, instance_eval=False, return_features=False, attention_only=False):
         A, h = self.attention_net(h)  # NxK        
-        A = torch.transpose(A, 1, 0)  # KxN
+        A = torch.transpose(A, 1, 0)  # KxN       
         if attention_only:
             return A
         A_raw = A
@@ -234,7 +252,12 @@ class CLAM_MB(CLAM_SB):
             if self.subtyping:
                 total_inst_loss /= len(self.instance_classifiers)
 
-        M = torch.mm(A, h) 
+        #M = torch.mm(A, h)
+        A = A.squeeze(-1).unsqueeze(1)  # Shape: (batch_size, 1, num_instances)
+        M = torch.bmm(A, h)  # Weighted sum, shape: (batch_size, 1, feature_dim)
+        M = M.squeeze(1)  # Shape: (batch_size, feature_dim)
+
+    # Predict risk scores
 
         logits = torch.empty(1, self.n_classes).float().to(M.device)
         for c in range(self.n_classes):

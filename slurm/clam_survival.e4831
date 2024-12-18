@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/home/brentoh1030/workspace/CLAM/main.py", line 243, in <module>
+    results = main(args)
+  File "/home/brentoh1030/workspace/CLAM/main.py", line 60, in main
+    results, test_c_index, val_c_index = train(datasets, i, args)
+  File "/home/brentoh1030/workspace/CLAM/utils/core_utils.py", line 172, in train
+    model = CLAM_SB(**model_dict, instance_loss_fn=instance_loss_fn)
+  File "/home/brentoh1030/workspace/CLAM/models/model_clam.py", line 97, in __init__
+    if self.task_type == 'classification':
+  File "/home/brentoh1030/miniconda3/envs/clam_latest/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1931, in __getattr__
+    raise AttributeError(
+AttributeError: 'CLAM_SB' object has no attribute 'task_type'

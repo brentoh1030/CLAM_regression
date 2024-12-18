@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/home/brentoh1030/workspace/CLAM/main.py", line 211, in <module>
+    assert args.subtyping 
+AssertionError

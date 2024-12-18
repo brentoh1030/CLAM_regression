@@ -1,0 +1,11 @@
+,train_stats,val_stats,test_stats
+event_time_count,1623.0,202.0,202.0
+event_time_mean,478.60813308687614,454.41584158415844,462.7722772277228
+event_time_std,519.4397845264216,549.0772135268976,396.80408292084036
+event_time_min,0.0,6.0,3.0
+event_time_25%,178.0,164.75,214.0
+event_time_50%,335.0,310.0,365.0
+event_time_75%,588.0,478.75,613.0
+event_time_max,3881.0,3881.0,2729.0
+censorship_1,1295,167,155
+censorship_0,328,35,47

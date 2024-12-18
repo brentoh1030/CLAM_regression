@@ -1,0 +1,31 @@
+/home/brentoh1030/miniconda3/envs/clam_latest/lib/python3.10/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/brentoh1030/workspace/CLAM/main.py", line 244, in <module>
+    results = main(args)
+  File "/home/brentoh1030/workspace/CLAM/main.py", line 60, in main
+    results, test_c_index, val_c_index = train(datasets, i, args)
+  File "/home/brentoh1030/workspace/CLAM/utils/core_utils.py", line 208, in train
+    train_loop_clam(epoch, model, train_loader, optimizer, args.n_classes, args.bag_weight, writer, loss_fn)
+  File "/home/brentoh1030/workspace/CLAM/utils/core_utils.py", line 272, in train_loop_clam
+    for batch_idx, batch_data in enumerate(loader):
+  File "/home/brentoh1030/miniconda3/envs/clam_latest/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 701, in __next__
+    data = self._next_data()
+  File "/home/brentoh1030/miniconda3/envs/clam_latest/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1465, in _next_data
+    return self._process_data(data)
+  File "/home/brentoh1030/miniconda3/envs/clam_latest/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1491, in _process_data
+    data.reraise()
+  File "/home/brentoh1030/miniconda3/envs/clam_latest/lib/python3.10/site-packages/torch/_utils.py", line 715, in reraise
+    raise exception
+AttributeError: Caught AttributeError in DataLoader worker process 0.
+Original Traceback (most recent call last):
+  File "/home/brentoh1030/miniconda3/envs/clam_latest/lib/python3.10/site-packages/torch/utils/data/_utils/worker.py", line 351, in _worker_loop
+    data = fetcher.fetch(index)  # type: ignore[possibly-undefined]
+  File "/home/brentoh1030/miniconda3/envs/clam_latest/lib/python3.10/site-packages/torch/utils/data/_utils/fetch.py", line 52, in fetch
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/home/brentoh1030/miniconda3/envs/clam_latest/lib/python3.10/site-packages/torch/utils/data/_utils/fetch.py", line 52, in <listcomp>
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/home/brentoh1030/workspace/CLAM/dataset_modules/dataset_generic.py", line 416, in __getitem__
+    event_time = self.slide_data[self.event_time_col][idx]  # Get event time
+AttributeError: 'Generic_Split' object has no attribute 'event_time_col'
+

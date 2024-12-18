@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/brentoh1030/workspace/CLAM/main.py", line 11, in <module>
+    from utils.core_utils import train
+  File "/home/brentoh1030/workspace/CLAM/utils/core_utils.py", line 5, in <module>
+    from dataset_modules.dataset_generic import save_splits
+  File "/home/brentoh1030/workspace/CLAM/dataset_modules/dataset_generic.py", line 416
+    event_time = self.slide_data[self.event_time_col][idx]  # Get event time
+IndentationError: unexpected indent

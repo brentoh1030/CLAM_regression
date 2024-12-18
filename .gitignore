@@ -1,3 +1,9 @@
 **/.DS_Store
 __pycache__/
 notebooks
+
+# Ignore test notebook
+test.ipynb
+
+# Ignore slurm directory and all its contents
+#slurm/

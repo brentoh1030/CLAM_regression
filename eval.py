@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from dataset_modules.dataset_generic import Generic_WSI_Classification_Dataset, Generic_MIL_Dataset, save_splits
 import h5py
 from utils.eval_utils import *
+from lifelines.utils import concordance_index
 
 # Training settings
 parser = argparse.ArgumentParser(description='CLAM Evaluation Script')
@@ -42,6 +43,8 @@ parser.add_argument('--split', type=str, choices=['train', 'val', 'test', 'all']
 parser.add_argument('--task', type=str, choices=['task_1_tumor_vs_normal',  'task_2_tumor_subtyping'])
 parser.add_argument('--drop_out', type=float, default=0.25, help='dropout')
 parser.add_argument('--embed_dim', type=int, default=1024)
+parser.add_argument('--task_type', type=str, choices=['classification', 'regression'], default='classification',
+                    help='specify task type (default: classification)')
 args = parser.parse_args()
 
 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -63,7 +66,8 @@ settings = {'task': args.task,
             'models_dir': args.models_dir,
             'model_type': args.model_type,
             'drop_out': args.drop_out,
-            'model_size': args.model_size}
+            'model_size': args.model_size,
+            'task_type': args.task_type}
 
 with open(args.save_dir + '/eval_experiment_{}.txt'.format(args.save_exp_code), 'w') as f:
     print(settings, file=f)
@@ -123,6 +127,7 @@ if __name__ == "__main__":
     all_results = []
     all_auc = []
     all_acc = []
+    all_c_index = []
     for ckpt_idx in range(len(ckpt_paths)):
         if datasets_id[args.split] < 0:
             split_dataset = dataset
@@ -130,13 +135,25 @@ if __name__ == "__main__":
             csv_path = '{}/splits_{}.csv'.format(args.splits_dir, folds[ckpt_idx])
             datasets = dataset.return_splits(from_id=False, csv_path=csv_path)
             split_dataset = datasets[datasets_id[args.split]]
-        model, patient_results, test_error, auc, df  = eval(split_dataset, args, ckpt_paths[ckpt_idx])
+
+        if args.task_type == 'classification':
+            model, patient_results, test_error, auc, df = eval(split_dataset, args, ckpt_paths[ckpt_idx])
+            all_auc.append(auc)
+            all_acc.append(1 - test_error)
+        else:  # Regression
+            model, patient_results, risk_scores, event_times, censorships, df = eval(split_dataset, args, ckpt_paths[ckpt_idx])
+            c_index = concordance_index(event_times, risk_scores, censorships)
+            all_c_index.append(c_index)
+
         all_results.append(all_results)
-        all_auc.append(auc)
-        all_acc.append(1-test_error)
+
         df.to_csv(os.path.join(args.save_dir, 'fold_{}.csv'.format(folds[ckpt_idx])), index=False)
 
-    final_df = pd.DataFrame({'folds': folds, 'test_auc': all_auc, 'test_acc': all_acc})
+    if args.task_type == 'classification':
+        final_df = pd.DataFrame({'folds': folds, 'test_auc': all_auc, 'test_acc': all_acc})
+    else:  # Regression
+        final_df = pd.DataFrame({'folds': folds, 'test_c_index': all_c_index})
+
     if len(folds) != args.k:
         save_name = 'summary_partial_{}_{}.csv'.format(folds[0], folds[-1])
     else:

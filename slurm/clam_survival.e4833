@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/home/brentoh1030/workspace/CLAM/main.py", line 243, in <module>
+    results = main(args)
+  File "/home/brentoh1030/workspace/CLAM/main.py", line 60, in main
+    results, test_c_index, val_c_index = train(datasets, i, args)
+  File "/home/brentoh1030/workspace/CLAM/utils/core_utils.py", line 193, in train
+    train_loader = get_split_loader(train_split, training=True, testing = args.testing, weighted = args.weighted_sample)
+  File "/home/brentoh1030/workspace/CLAM/utils/utils.py", line 59, in get_split_loader
+    weights = make_weights_for_balanced_classes_split(split_dataset)
+  File "/home/brentoh1030/workspace/CLAM/utils/utils.py", line 170, in make_weights_for_balanced_classes_split
+    weight_per_class = [N/len(dataset.slide_cls_ids[c]) for c in range(len(dataset.slide_cls_ids))]                                                                                                     
+AttributeError: 'Generic_Split' object has no attribute 'slide_cls_ids'

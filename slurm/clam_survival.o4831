@@ -1,0 +1,55 @@
+
+Load Dataset
+This is a survival prediction task.
+Event time stats:
+count    2027.000000
+mean      474.619142
+std       511.481073
+min         0.000000
+25%       178.000000
+50%       335.000000
+75%       588.000000
+max      3881.000000
+Name: event_time, dtype: float64
+Censorship stats:
+censorship
+1    1617
+0     410
+Name: count, dtype: int64
+split_dir:  /home/brentoh1030/workspace/CLAM/splits/task_3_survival_prediction_100
+################# Settings ###################
+num_splits:  10
+k_start:  -1
+k_end:  -1
+task:  task_3_survival_prediction
+task_type:  regression
+max_epochs:  200
+results_dir:  /home/brentoh1030/workspace/CLAM/results
+lr:  0.0002
+experiment:  task_3_survival_prediction_CLAM_50
+reg:  1e-05
+label_frac:  1.0
+bag_loss:  ce
+seed:  1
+model_type:  clam_sb
+model_size:  small
+use_drop_out:  0.25
+weighted_sample:  True
+opt:  adam
+bag_weight:  0.7
+inst_loss:  None
+B:  8
+split_dir:  /home/brentoh1030/workspace/CLAM/splits/task_3_survival_prediction_100
+Generated splits: Train size: 1623, Val size: 202, Test size: 202
+
+Training Fold 0!
+
+Init train/val/test splits... 
+Done!
+Training on 1623 samples
+Validating on 202 samples
+Testing on 202 samples
+
+Init loss function... Done!
+
+Init Model... 
